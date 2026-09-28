@@ -50,8 +50,10 @@
     <form id="task-form">
       <input type="hidden" id="task-id">
       <div class="field">
-        <label>Nombre de la clase</label>
-        <input type="text" id="f-titulo" required placeholder="Ej: Taller de expresiones regulares">
+        <label>Materia</label>
+        <select id="f-materia"></select>
+        <input type="text" id="f-titulo" class="hidden" placeholder="Nombre de la nueva materia">
+        <button type="button" class="link-btn" id="btn-del-materia">🗑️ Quitar esta materia de la lista</button>
       </div>
       <div class="field">
         <label>Dónde entregar</label>

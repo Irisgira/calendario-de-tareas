@@ -2,7 +2,19 @@
   const STORAGE_KEY = 'kawaiiTasksU';
   const PLAT_LABEL = { aula:'Aula Virtual', teams:'Teams', examen:'Examen presencial', exposicion:'Exposición' };
 
+  const MAT_KEY = 'kawaiiMateriasU';
+
   let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  let materias = JSON.parse(localStorage.getItem(MAT_KEY) || 'null');
+  if(!materias){
+    // primera vez: toma las materias de las tareas que ya existen
+    materias = [...new Set(tasks.map(t=>t.titulo))];
+    saveMaterias();
+  }
+  function saveMaterias(){
+    materias.sort((a,b)=> a.localeCompare(b,'es'));
+    localStorage.setItem(MAT_KEY, JSON.stringify(materias));
+  }
   let calDate = new Date();
   let selectedDay = null;
 
@@ -90,10 +102,39 @@
   document.getElementById('btn-cancel').onclick = closeModal;
   overlay.onclick = (e)=>{ if(e.target===overlay) closeModal(); };
 
+  const selMateria = document.getElementById('f-materia');
+  const inpTitulo = document.getElementById('f-titulo');
+  const btnDelMateria = document.getElementById('btn-del-materia');
+
+  function fillMaterias(selected){
+    selMateria.innerHTML =
+      materias.map(m=>`<option value="${escapeHTML(m).replace(/"/g,'&quot;')}">${escapeHTML(m)}</option>`).join('') +
+      '<option value="__new__">➕ Nueva materia...</option>';
+    selMateria.value = (selected && materias.includes(selected)) ? selected : (materias[0] || '__new__');
+    toggleNew();
+  }
+  function toggleNew(){
+    const isNew = selMateria.value === '__new__';
+    inpTitulo.classList.toggle('hidden', !isNew);
+    inpTitulo.required = isNew;
+    btnDelMateria.classList.toggle('hidden', isNew);
+    if(isNew) inpTitulo.focus();
+  }
+  selMateria.onchange = toggleNew;
+  btnDelMateria.onclick = ()=>{
+    const m = selMateria.value;
+    if(m === '__new__') return;
+    if(!confirm(`¿Quitar "${m}" de la lista? Las tareas que ya tienes con esa materia no se borran.`)) return;
+    materias = materias.filter(x=>x!==m);
+    saveMaterias();
+    fillMaterias();
+  };
+
   function openNew(){
     document.getElementById('modal-title').textContent = 'Nueva tarea';
     form.reset();
     document.getElementById('task-id').value = '';
+    fillMaterias();
     overlay.classList.add('active');
   }
   function openEdit(id){
@@ -101,7 +142,8 @@
     if(!t) return;
     document.getElementById('modal-title').textContent = 'Editar tarea';
     document.getElementById('task-id').value = t.id;
-    document.getElementById('f-titulo').value = t.titulo;
+    if(!materias.includes(t.titulo)){ materias.push(t.titulo); saveMaterias(); }
+    fillMaterias(t.titulo);
     document.getElementById('f-plataforma').value = t.plataforma;
     document.getElementById('f-fecha').value = t.fecha;
     document.getElementById('f-notas').value = t.notas || '';
@@ -113,12 +155,16 @@
     e.preventDefault();
     const id = document.getElementById('task-id').value;
     const data = {
-      titulo: document.getElementById('f-titulo').value.trim(),
+      titulo: selMateria.value === '__new__' ? inpTitulo.value.trim() : selMateria.value,
       plataforma: document.getElementById('f-plataforma').value,
       fecha: document.getElementById('f-fecha').value,
       notas: document.getElementById('f-notas').value.trim(),
     };
     if(!data.titulo || !data.fecha) return;
+    // si la materia es nueva, se guarda en la lista (sin duplicar por mayúsculas)
+    const existente = materias.find(m=>m.toLowerCase()===data.titulo.toLowerCase());
+    if(existente){ data.titulo = existente; }
+    else { materias.push(data.titulo); saveMaterias(); }
     if(id){
       const t = tasks.find(x=>x.id===id);
       Object.assign(t, data);
