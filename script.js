@@ -51,6 +51,7 @@
       <button class="check-btn ${t.completada?'checked':''}" data-check="${t.id}">${t.completada?'✓':''}</button>
       <div class="task-body">
         <p class="task-title">${escapeHTML(t.titulo)}</p>
+        ${t.notas ? `<p class="task-notes">${escapeHTML(t.notas)}</p>` : ''}
         <div class="task-meta">
           <span class="badge ${t.plataforma}">${PLAT_LABEL[t.plataforma]}</span>
           <span class="due ${urgent?'urgent':''}">${dueLabel(t.fecha)} · ${formatDate(t.fecha)}</span>
